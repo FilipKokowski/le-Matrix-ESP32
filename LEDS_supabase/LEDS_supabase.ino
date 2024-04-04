@@ -2,9 +2,10 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <FastLED.h>
+#include <ESP32_Supabase.h>
 
 #define LED_PIN     4
-#define NUM_LEDS    9                                                                                                                                                                                                                                                       
+#define NUM_LEDS    4                                                                                                                                                                                                                                                      
 
 CRGB leds[NUM_LEDS];
 
@@ -13,7 +14,12 @@ CRGB colors[NUM_LEDS];
 const char* ssid = "LeMatrix";
 const char* password = NULL;
 
+const char* ssidW = "RN8";
+const char* passwordW = "123456789";
+
 AsyncWebServer server(80);
+
+Supabase db;
 
 String htmlForm = "\
 <!DOCTYPE html>\
@@ -51,16 +57,15 @@ void setup() {
   }
   
   FastLED.addLeds<WS2812, LED_PIN, GRB>(leds, NUM_LEDS);
-  FastLED.setBrightness(4);
+  FastLED.setBrightness(6);
   
   Serial.begin(115200);
-   Serial.println("dawdawdawdawdaw");
   pinMode(5, OUTPUT);      // set the LED pin mode
     
   Serial.begin(115200);
 
   // Initialize ESP32 as Access Point
-  WiFi.mode(WIFI_AP);
+  /*WiFi.mode(WIFI_AP);
   WiFi.softAP(ssid, password);
 
   Serial.println("Access Point started");
@@ -95,19 +100,35 @@ void setup() {
       Serial.println("Connecting...");
       count++;
     }
-
+    
     Serial.println(WiFi.status() == WL_CONNECTED);
     
     request->redirect((WiFi.status() == WL_CONNECTED) ? "/connected" : "/");
   });
   
   // Start server
-  server.begin();
+  server.begin();*/
+  Serial.println("dbno: ");
+
+  WiFi.begin("RN8", "123456789");
+
+  while(WiFi.status() != WL_CONNECTED){
+    Serial.println("connecting");
+    delay(1000);
+  }
+
+  Serial.println("connected");
+  
+  db.begin("https://xujfzrydvpziizkztbjp.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1amZ6cnlkdnB6aWl6a3p0YmpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTExNDQwNTUsImV4cCI6MjAyNjcyMDA1NX0.ikspwER5xHsaSPIkO67P-XOzCPNjIaLMDa7o5dCa608");
+  String select = db.from("system").select("*").eq("code", "9999").limit(1).doSelect();
+  Serial.println("seelct: "  + select);
+
 }
 
 void loop() {
   if(WiFi.status() == WL_CONNECTED){
-    //WiFi.softAPdisconnect(true);
+      Serial.println("lop: ");
+
     for(int led = 0; led < NUM_LEDS; led++){
       leds[led] = CRGB(0,255,0);
       FastLED.show();
