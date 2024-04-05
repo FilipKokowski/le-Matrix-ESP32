@@ -2,7 +2,8 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <FastLED.h>
-#include <ESP32_Supabase.h>
+#include <HTTPClient.h>
+
 
 #define LED_PIN     4
 #define NUM_LEDS    4                                                                                                                                                                                                                                                      
@@ -17,9 +18,10 @@ const char* password = NULL;
 const char* ssidW = "RN8";
 const char* passwordW = "123456789";
 
-AsyncWebServer server(80);
+const String apiURL = "https://xujfzrydvpziizkztbjp.supabase.co/rest/v1";
+const String apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1amZ6cnlkdnB6aWl6a3p0YmpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTExNDQwNTUsImV4cCI6MjAyNjcyMDA1NX0.ikspwER5xHsaSPIkO67P-XOzCPNjIaLMDa7o5dCa608";
 
-Supabase db;
+AsyncWebServer server(80);
 
 String htmlForm = "\
 <!DOCTYPE html>\
@@ -118,16 +120,30 @@ void setup() {
   }
 
   Serial.println("connected");
-  
-  db.begin("https://xujfzrydvpziizkztbjp.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1amZ6cnlkdnB6aWl6a3p0YmpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTExNDQwNTUsImV4cCI6MjAyNjcyMDA1NX0.ikspwER5xHsaSPIkO67P-XOzCPNjIaLMDa7o5dCa608");
-  String select = db.from("system").select("*").eq("code", "9999").limit(1).doSelect();
-  Serial.println("seelct: "  + select);
-
 }
 
 void loop() {
   if(WiFi.status() == WL_CONNECTED){
-      Serial.println("lop: ");
+      HTTPClient http;
+
+      http.begin(apiURL + "/system");
+      http.addHeader("apikey", apiKey);
+      http.addHeader("Content-Type", "application/json"); 
+
+      int httpResponseCode = http.GET();
+
+      if(httpResponseCode > 0){
+        Serial.printf("[HTTP] GET... code: %d\n", httpResponseCode);
+
+        // Parse the response
+        String payload = http.getString();
+        Serial.println("Response:");
+        Serial.println(payload);
+      } else {
+        Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpResponseCode).c_str());
+      }
+      
+    http.end(); // Close connection
 
     for(int led = 0; led < NUM_LEDS; led++){
       leds[led] = CRGB(0,255,0);
